@@ -2,8 +2,10 @@
 AI Engine - Motor de Inteligência Artificial para geração e processamento de briefings
 """
 import re
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
+from openai import OpenAI
 
 from models import (
     Briefing, BriefingItem, ValidationCheck, ComplexityLevel, 
@@ -11,6 +13,16 @@ from models import (
 )
 from templates import get_template, get_all_templates
 from brand_personas import get_persona, get_tone_guidelines
+
+
+# Configuração da API Key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "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")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openrouter.ai/api/v1")
+
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    base_url=OPENAI_BASE_URL
+)
 
 
 class AIEngine:
@@ -327,12 +339,29 @@ class AIEngine:
         except Exception:
             return {"Cronograma": "A definir"}
     
+    def _call_llm(self, prompt: str, system_prompt: str = "Você é um assistente especializado em criação de briefings profissionais para agências de publicidade e marketing.") -> str:
+        """Chama a API de LLM para gerar conteúdo"""
+        try:
+            response = client.chat.completions.create(
+                model="meta-llama/llama-3.2-3b-instruct",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Erro na chamada da API: {e}")
+            return ""
+    
     def generate_briefing(
         self, 
         user_input: UserInput, 
         folder_context: Optional[Dict[str, Any]] = None
     ) -> GenerationResponse:
-        """Gera um briefing completo baseado no input do usuário"""
+        """Gera um briefing completo baseado no input do usuário usando IA real"""
         
         # 1. Detecta complexidade
         complexity = self.detect_complexity(user_input.text)
@@ -345,46 +374,128 @@ class AIEngine:
         template_id = self.suggest_template(complexity, deliverables)
         template = get_template(template_id)
         
-        # 4. Gera perguntas para informações faltantes
-        questions = self.generate_questions(user_input.text, complexity)
+        # 4. Prepara contexto da persona
+        persona = get_persona(user_input.brand_persona_id or "glpv_30anos")
+        tone_guidelines = get_tone_guidelines(user_input.brand_persona_id or "glpv_30anos")
         
-        # 5. Gera especificações técnicas
+        # 5. Monta prompt para a IA
+        system_prompt = f"""Você é um especialista em criação de briefings profissionais para agências de publicidade.
+Sua tarefa é transformar solicitações informais em briefings estruturados e prontos para execução.
+
+Persona da Marca:
+- Nome: {persona.get('name', 'Não especificado')}
+- Tom: {persona.get('tone', 'Não especificado')}
+- Palavras-chave: {', '.join(persona.get('keywords', []))}
+- Palavras proibidas: {', '.join(persona.get('forbidden_words', []))}
+
+Diretrizes de Tom de Voz:
+{tone_guidelines}
+
+Sempre gere respostas em português do Brasil."""
+
+        context_info = ""
+        if folder_context and folder_context.get("previous_briefings"):
+            context_info = "\n\nContexto de Projetos Anteriores nesta Pasta:\n"
+            for prev in folder_context["previous_briefings"][-3:]:
+                context_info += f"- {prev.get('title', 'Sem título')}: {prev.get('description', '')[:100]}...\n"
+
+        prompt = f"""Transforme esta solicitação em um briefing profissional estruturado:
+
+Solicitação do Usuário:
+"{user_input.text}"
+
+{context_info}
+
+Complexidade Detectada: {complexity.value}
+Deliverables Identificados: {', '.join(deliverables) if deliverables else 'Não especificado'}
+Template Sugerido: {template_id}
+
+Por favor, gere:
+1. Um título claro e objetivo (máximo 80 caracteres)
+2. Uma descrição detalhada aplicando o tom de voz da marca
+3. Objetivo principal do projeto
+4. Público-alvo sugerido (se não mencionado, inferir baseado no contexto)
+5. Lista de deliverables com especificações técnicas apropriadas
+6. Cronograma reverso sugerido (se houver data mencionada)
+7. Checklist de validação
+
+Responda EXATAMENTE neste formato JSON:
+{{
+    "title": "título aqui",
+    "description": "descrição aqui",
+    "objective": "objetivo aqui",
+    "target_audience": "público aqui",
+    "deliverables": [
+        {{"title": "Post", "description": "...", "specifications": "..."}}
+    ],
+    "deadlines": {{"Briefing aprovado": "01/01", "Entrega": "15/01"}},
+    "missing_info": ["pergunta 1", "pergunta 2"]
+}}"""
+
+        # 6. Chama a IA
+        llm_response = self._call_llm(prompt, system_prompt)
+        
+        # 7. Parse da resposta da IA
+        import json
+        parsed_data = {}
+        try:
+            # Tenta extrair JSON da resposta
+            start_idx = llm_response.find('{')
+            end_idx = llm_response.rfind('}') + 1
+            if start_idx >= 0 and end_idx > start_idx:
+                json_str = llm_response[start_idx:end_idx]
+                parsed_data = json.loads(json_str)
+        except Exception as e:
+            print(f"Erro ao parsear resposta da IA: {e}")
+            parsed_data = {}
+        
+        # 8. Gera especificações técnicas
         tech_specs = self.generate_technical_specs(deliverables, complexity)
         
-        # 6. Gera validações
+        # 9. Gera validações
         validation_checks = self.generate_validation_checks(complexity, deliverables)
         
-        # 7. Aplica tom de voz da marca
-        brand_tone = user_input.brand_tone or BrandTone.GLPV_HUMANIZED
-        persona_id = user_input.brand_persona_id or "glpv_30anos"
+        # 10. Gera perguntas para informações faltantes
+        questions = parsed_data.get("missing_info", [])
+        if not questions:
+            questions = self.generate_questions(user_input.text, complexity)
         
-        # 8. Cálculo de timeline (simulado)
-        deadlines = {}
-        if dates:
+        # 11. Cálculo de timeline
+        deadlines = parsed_data.get("deadlines", {})
+        if not deadlines and dates:
             deadlines = self.calculate_reverse_timeline(dates[0][0], complexity)
         
-        # 9. Monta o briefing
-        title = self._generate_title(user_input.text, complexity)
-        description = self._generate_description(user_input.text, persona_id)
+        # 12. Monta o briefing com dados da IA
+        title = parsed_data.get("title", self._generate_title(user_input.text, complexity))
+        description = parsed_data.get("description", "")
+        if not description:
+            description = self.apply_brand_tone(user_input.text, user_input.brand_persona_id)
         
         # Cria deliverables estruturados
         briefing_items = []
-        for deliverable in deliverables:
-            specs = tech_specs.get(deliverable, {})
-            # Converte dict para string se necessário
-            if isinstance(specs, dict):
-                specs_str = str(specs)
-            else:
-                specs_str = specs or "Ver especificações gerais"
-            
-            briefing_items.append(BriefingItem(
-                title=deliverable.capitalize(),
-                description=f"Criar {deliverable} conforme especificações técnicas",
-                specifications=specs_str,
-                status="pending"
-            ))
+        ai_deliverables = parsed_data.get("deliverables", [])
         
-        # Se não detectou deliverables específicos, cria um genérico
+        if ai_deliverables:
+            for item in ai_deliverables:
+                briefing_items.append(BriefingItem(
+                    title=item.get("title", "Item"),
+                    description=item.get("description", ""),
+                    specifications=item.get("specifications", tech_specs.get(item.get("title", "").lower(), "Ver especificações")),
+                    status="pending"
+                ))
+        else:
+            # Fallback para deliverables detectados
+            for deliverable in deliverables:
+                specs = tech_specs.get(deliverable, {})
+                specs_str = str(specs) if isinstance(specs, dict) else (specs or "Ver especificações gerais")
+                briefing_items.append(BriefingItem(
+                    title=deliverable.capitalize(),
+                    description=f"Criar {deliverable} conforme especificações técnicas",
+                    specifications=specs_str,
+                    status="pending"
+                ))
+        
+        # Se ainda não tem deliverables, cria genérico
         if not briefing_items:
             briefing_items.append(BriefingItem(
                 title="Peça Principal",
@@ -393,22 +504,26 @@ class AIEngine:
                 status="pending"
             ))
         
-        # 10. Calcula confidence score
+        # 13. Calcula confidence score
         confidence_score = self._calculate_confidence(
             user_input.text, 
             complexity, 
             len(questions)
         )
         
+        # Aumenta confiança se a IA conseguiu gerar dados úteis
+        if parsed_data:
+            confidence_score = min(1.0, confidence_score + 0.15)
+        
         # Cria o briefing
         briefing = Briefing(
             title=title,
             description=description,
             complexity=complexity,
-            brand_tone=brand_tone,
-            brand_persona_id=persona_id,
-            objective=self._extract_objective(user_input.text),
-            target_audience="",  # Será preenchido via perguntas
+            brand_tone=user_input.brand_tone or BrandTone.GLPV_HUMANIZED,
+            brand_persona_id=user_input.brand_persona_id or "glpv_30anos",
+            objective=parsed_data.get("objective", self._extract_objective(user_input.text)),
+            target_audience=parsed_data.get("target_audience", ""),
             deliverables=briefing_items,
             deadlines=deadlines,
             technical_specs=tech_specs,
