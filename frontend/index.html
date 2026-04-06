@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Briefa - Gerador de Briefings com IA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-white);
+            padding: 20px 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--bg-light);
+            border-radius: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--error);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            margin-bottom: 25px;
+        }
+
+        .card-header h2 {
+            font-size: 22px;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .card-header p {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .folder-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .folder-item {
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .folder-item:hover {
+            background: var(--border);
+            transform: translateX(5px);
+        }
+
+        .folder-item.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+            border-left: 4px solid var(--primary);
+        }
+
+        .briefing-output {
+            background: var(--bg-light);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .briefing-section {
+            margin-bottom: 20px;
+        }
+
+        .briefing-section h3 {
+            color: var(--primary);
+            font-size: 18px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .briefing-section p,
+        .briefing-section li {
+            color: var(--text-dark);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .briefing-section ul {
+            list-style-position: inside;
+            margin-left: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tag.complex {
+            background: var(--secondary);
+        }
+
+        .tag.simple {
+            background: var(--success);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: var(--bg-light);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .spec-card {
+            background: var(--bg-white);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .spec-card h4 {
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .history-item {
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: var(--border);
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .history-title {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <h1>Briefa</h1>
+            </div>
+            <div class="api-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Conectando...</span>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Painel Esquerdo -->
+            <div class="left-panel">
+                <!-- Tabs -->
+                <div class="card" style="margin-bottom: 30px;">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="new-briefing">Novo Briefing</div>
+                        <div class="tab" data-tab="folders">Pastas</div>
+                        <div class="tab" data-tab="history">Histórico</div>
+                    </div>
+
+                    <!-- Tab: Novo Briefing -->
+                    <div class="tab-content active" id="new-briefing">
+                        <div class="card-header">
+                            <h2>Criar Novo Briefing</h2>
+                            <p>Descreva seu projeto e a IA gerará um briefing profissional</p>
+                        </div>
+
+                        <div id="alertContainer"></div>
+
+                        <form id="briefingForm">
+                            <div class="form-group">
+                                <label for="folderSelect">Pasta do Projeto *</label>
+                                <select id="folderSelect" required>
+                                    <option value="">Selecione ou crie uma pasta...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brandPersona">Persona da Marca *</label>
+                                <select id="brandPersona" required>
+                                    <option value="">Selecione uma persona...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="projectDescription">Descrição do Projeto *</label>
+                                <textarea 
+                                    id="projectDescription" 
+                                    placeholder="Ex: Preciso de um post para os 30 anos do hospital, focado em doação, tom emocionante. Data: 03/06. Deliverables: posts, stories, thumb."
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deadline">Prazo (opcional)</label>
+                                <input type="date" id="deadline">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="additionalInfo">Informações Adicionais (opcional)</label>
+                                <textarea 
+                                    id="additionalInfo" 
+                                    placeholder="Referências, restrições, observações..."
+                                    style="min-height: 80px;"
+                                ></textarea>
+                            </div>
+
+                            <div class="button-group">
+                                <button type="submit" class="btn btn-primary" id="generateBtn">
+                                    <span class="btn-text">Gerar Briefing</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                    Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab: Pastas -->
+                    <div class="tab-content" id="folders">
+                        <div class="card-header">
+                            <h2>Gerenciar Pastas</h2>
+                            <p>Organize seus briefings por projetos ou clientes</p>
+                        </div>
+
+                        <form id="folderForm" style="margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label for="newFolderName">Nova Pasta</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input 
+                                        type="text" 
+                                        id="newFolderName" 
+                                        placeholder="Nome da pasta (ex: Cliente X - Campanha 2024)"
+                                        required
+                                    >
+                                    <button type="submit" class="btn btn-primary">Criar</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="folder-list" id="folderList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <span>Carregando pastas...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Histórico -->
+                    <div class="tab-content" id="history">
+                        <div class="card-header">
+                            <h2>Histórico de Briefings</h2>
+                            <p>Acesse briefings gerados anteriormente</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="historyFolder">Filtrar por Pasta</label>
+                            <select id="historyFolder" onchange="loadHistory()">
+                                <option value="">Todas as pastas</option>
+                            </select>
+                        </div>
+
+                        <div id="historyList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <span>Carregando histórico...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel Direito -->
+            <div class="right-panel">
+                <div class="card" id="outputCard">
+                    <div class="card-header">
+                        <h2>Briefing Gerado</h2>
+                        <p>Visualize, edite e exporte seu briefing</p>
+                    </div>
+
+                    <div id="outputContent">
+                        <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
+                            <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+                            <h3>Nenhum briefing gerado ainda</h3>
+                            <p>Preencha o formulário ao lado e clique em "Gerar Briefing"</p>
+                        </div>
+                    </div>
+
+                    <div id="outputActions" style="display: none; margin-top: 20px;">
+                        <div class="button-group">
+                            <button class="btn btn-success" onclick="saveBriefing()">
+                                💾 Salvar
+                            </button>
+                            <button class="btn btn-warning" onclick="regenerateBriefing()">
+                                🔄 Gerar Outro
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportPDF()">
+                                📥 Exportar PDF
+                            </button>
+                            <button class="btn btn-danger" onclick="discardBriefing()">
+                                🗑️ Descartar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Confirmar</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <p id="modalMessage"></p>
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" id="modalConfirmBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        let API_BASE_URL = 'http://localhost:8000';
+        
+        // Detectar se está rodando localmente ou em produção
+        if (window.location.protocol === 'https:' || window.location.hostname !== '') {
+            // Em produção, tentar usar a mesma origem
+            API_BASE_URL = window.location.origin;
+        }
+
+        // Estado da aplicação
+        let currentBriefing = null;
+        let folders = [];
+        let personas = [];
+        let selectedFolderId = null;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAPIConnection();
+            loadFolders();
+            loadPersonas();
+            setupEventListeners();
+        });
+
+        // Verificar conexão com API
+        async function checkAPIConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    document.getElementById('statusDot').classList.add('connected');
+                    document.getElementById('statusText').textContent = 'API Conectada';
+                } else {
+                    throw new Error('API não respondendo');
+                }
+            } catch (error) {
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = 'API Desconectada - Rodando localmente?';
+                showAlert('Não foi possível conectar à API. Certifique-se de que o backend está rodando em http://localhost:8000', 'error');
+            }
+        }
+
+        // Carregar pastas
+        async function loadFolders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/folders`);
+                if (response.ok) {
+                    folders = await response.json();
+                    renderFolders();
+                    updateFolderSelects();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pastas:', error);
+            }
+        }
+
+        // Renderizar lista de pastas
+        function renderFolders() {
+            const folderList = document.getElementById('folderList');
+            if (folders.length === 0) {
+                folderList.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 20px;">Nenhuma pasta criada. Crie sua primeira pasta acima.</p>';
+                return;
+            }
+
+            folderList.innerHTML = folders.map(folder => `
+                <div class="folder-item ${selectedFolderId === folder.id ? 'active' : ''}" 
+                     onclick="selectFolder('${folder.id}')">
+                    <div>
+                        <strong>${folder.name}</strong>
+                        <div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">
+                            ${folder.briefing_count || 0} briefings • ${new Date(folder.created_at).toLocaleDateString('pt-BR')}
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" style="padding: 8px 12px; font-size: 12px;" 
+                            onclick="event.stopPropagation(); deleteFolder('${folder.id}')">
+                        Excluir
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Selecionar pasta
+        function selectFolder(folderId) {
+            selectedFolderId = folderId;
+            document.getElementById('folderSelect').value = folderId;
+            renderFolders();
+            loadHistory();
+        }
+
+        // Atualizar selects de pasta
+        function updateFolderSelects() {
+            const folderSelect = document.getElementById('folderSelect');
+            const historyFolder = document.getElementById('historyFolder');
+            
+            folderSelect.innerHTML = '<option value="">Selecione uma pasta...</option>' +
+                folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+            
+            historyFolder.innerHTML = '<option value="">Todas as pastas</option>' +
+                folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+        }
+
+        // Carregar personas
+        async function loadPersonas() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/personas`);
+                if (response.ok) {
+                    personas = await response.json();
+                    const personaSelect = document.getElementById('brandPersona');
+                    personaSelect.innerHTML = '<option value="">Selecione uma persona...</option>' +
+                        personas.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar personas:', error);
+            }
+        }
+
+        // Carregar histórico
+        async function loadHistory() {
+            try {
+                const folderId = document.getElementById('historyFolder').value;
+                let url = `${API_BASE_URL}/api/briefings`;
+                if (folderId) {
+                    url += `?folder_id=${folderId}`;
+                }
+                
+                const response = await fetch(url);
+                if (response.ok) {
+                    const briefings = await response.json();
+                    renderHistory(briefings);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+            }
+        }
+
+        // Renderizar histórico
+        function renderHistory(briefings) {
+            const historyList = document.getElementById('historyList');
+            if (briefings.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 20px;">Nenhum briefing encontrado.</p>';
+                return;
+            }
+
+            historyList.innerHTML = briefings.map(briefing => `
+                <div class="history-item" onclick="loadBriefing('${briefing.id}')">
+                    <div class="history-date">${new Date(briefing.created_at).toLocaleString('pt-BR')}</div>
+                    <div class="history-title">${briefing.project_name || 'Briefing sem título'}</div>
+                    <div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">
+                        Complexidade: ${briefing.complexity_level || 'N/A'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Carregar briefing específico
+        async function loadBriefing(briefingId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/briefings/${briefingId}`);
+                if (response.ok) {
+                    const briefing = await response.json();
+                    displayBriefing(briefing);
+                    // Mudar para tab de novo briefing
+                    switchTab('new-briefing');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar briefing:', error);
+                showAlert('Erro ao carregar briefing', 'error');
+            }
+        }
+
+        // Setup de event listeners
+        function setupEventListeners() {
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'folders') loadFolders();
+                    if (tab.dataset.tab === 'history') loadHistory();
+                });
+            });
+
+            // Form de briefing
+            document.getElementById('briefingForm').addEventListener('submit', handleGenerateBriefing);
+
+            // Form de pasta
+            document.getElementById('folderForm').addEventListener('submit', handleCreateFolder);
+        }
+
+        // Gerar briefing
+        async function handleGenerateBriefing(e) {
+            e.preventDefault();
+            
+            const formData = {
+                folder_id: document.getElementById('folderSelect').value,
+                brand_persona_id: document.getElementById('brandPersona').value,
+                project_description: document.getElementById('projectDescription').value,
+                deadline: document.getElementById('deadline').value || null,
+                additional_info: document.getElementById('additionalInfo').value || null
+            };
+
+            if (!formData.folder_id) {
+                showAlert('Por favor, selecione uma pasta', 'error');
+                return;
+            }
+
+            if (!formData.brand_persona_id) {
+                showAlert('Por favor, selecione uma persona de marca', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.querySelector('.btn-text').textContent;
+            generateBtn.disabled = true;
+            generateBtn.querySelector('.btn-text').innerHTML = '<div class="loading"><div class="spinner"></div>Gerando...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/generate-briefing`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    currentBriefing = await response.json();
+                    displayBriefing(currentBriefing);
+                    showAlert('Briefing gerado com sucesso!', 'success');
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Erro ao gerar briefing', 'error');
+                }
+            } catch (error) {
+                showAlert('Erro de conexão com a API', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.querySelector('.btn-text').textContent = originalText;
+            }
+        }
+
+        // Exibir briefing
+        function displayBriefing(briefing) {
+            const outputContent = document.getElementById('outputContent');
+            const outputActions = document.getElementById('outputActions');
+
+            outputContent.innerHTML = `
+                <div class="briefing-section">
+                    <h3>📋 Informações do Projeto</h3>
+                    <p><strong>Nome:</strong> ${briefing.project_name || 'Não definido'}</p>
+                    <p><strong>Objetivo:</strong> ${briefing.objective || 'Não definido'}</p>
+                    <p><strong>Complexidade:</strong> 
+                        <span class="tag ${briefing.complexity_level === 'simples' ? 'simple' : 'complex'}">
+                            ${briefing.complexity_level || 'Nível 1'}
+                        </span>
+                    </p>
+                    ${briefing.deadline ? `<p><strong>Prazo:</strong> ${new Date(briefing.deadline).toLocaleDateString('pt-BR')}</p>` : ''}
+                </div>
+
+                <div class="briefing-section">
+                    <h3>🎯 Público-Alvo</h3>
+                    <p>${briefing.target_audience || 'Não definido'}</p>
+                </div>
+
+                <div class="briefing-section">
+                    <h3>💬 Tom de Voz</h3>
+                    <p>${briefing.tone_of_voice || 'Não definido'}</p>
+                </div>
+
+                <div class="briefing-section">
+                    <h3>📦 Deliverables</h3>
+                    <ul>
+                        ${(briefing.deliverables || []).map(d => `<li>${d}</li>`).join('')}
+                    </ul>
+                </div>
+
+                ${briefing.technical_specs && briefing.technical_specs.length > 0 ? `
+                <div class="briefing-section">
+                    <h3>⚙️ Especificações Técnicas</h3>
+                    ${briefing.technical_specs.map(spec => `
+                        <div class="spec-card">
+                            <h4>${spec.item}</h4>
+                            <p>${spec.specifications}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                ${briefing.timeline && briefing.timeline.length > 0 ? `
+                <div class="briefing-section">
+                    <h3>📅 Cronograma Sugerido</h3>
+                    <ul>
+                        ${briefing.timeline.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${briefing.checklist && briefing.checklist.length > 0 ? `
+                <div class="briefing-section">
+                    <h3>✅ Checklist de Validação</h3>
+                    ${briefing.checklist.map(item => `
+                        <div class="checklist-item">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''}>
+                            <span>${item.item}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                <div class="briefing-section">
+                    <h3>📝 Observações</h3>
+                    <p>${briefing.observations || 'Nenhuma observação'}</p>
+                </div>
+            `;
+
+            outputActions.style.display = 'block';
+        }
+
+        // Salvar briefing
+        async function saveBriefing() {
+            if (!currentBriefing) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/briefings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentBriefing)
+                });
+
+                if (response.ok) {
+                    const saved = await response.json();
+                    currentBriefing.id = saved.id;
+                    showAlert('Briefing salvo com sucesso!', 'success');
+                    loadHistory();
+                } else {
+                    showAlert('Erro ao salvar briefing', 'error');
+                }
+            } catch (error) {
+                showAlert('Erro de conexão', 'error');
+            }
+        }
+
+        // Regenerar briefing
+        function regenerateBriefing() {
+            document.getElementById('projectDescription').value = '';
+            document.getElementById('additionalInfo').value = '';
+            document.getElementById('outputContent').innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
+                    <div style="font-size: 48px; margin-bottom: 20px;">🔄</div>
+                    <h3>Pronto para gerar novo briefing</h3>
+                    <p>Preencha o formulário e clique em "Gerar Briefing"</p>
+                </div>
+            `;
+            document.getElementById('outputActions').style.display = 'none';
+            currentBriefing = null;
+        }
+
+        // Descartar briefing
+        function discardBriefing() {
+            showModal(
+                'Descartar Briefing',
+                'Tem certeza que deseja descartar este briefing? Esta ação não pode ser desfeita.',
+                () => {
+                    regenerateBriefing();
+                    closeModal();
+                }
+            );
+        }
+
+        // Exportar PDF (simulado)
+        function exportPDF() {
+            if (!currentBriefing) return;
+            
+            const content = document.getElementById('outputContent').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `briefing-${currentBriefing.project_name || 'projeto'}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('Exportado com sucesso! (Em produção será PDF real)', 'success');
+        }
+
+        // Criar pasta
+        async function handleCreateFolder(e) {
+            e.preventDefault();
+            
+            const folderName = document.getElementById('newFolderName').value.trim();
+            if (!folderName) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/folders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: folderName })
+                });
+
+                if (response.ok) {
+                    document.getElementById('newFolderName').value = '';
+                    await loadFolders();
+                    showAlert('Pasta criada com sucesso!', 'success');
+                } else {
+                    showAlert('Erro ao criar pasta', 'error');
+                }
+            } catch (error) {
+                showAlert('Erro de conexão', 'error');
+            }
+        }
+
+        // Excluir pasta
+        async function deleteFolder(folderId) {
+            showModal(
+                'Excluir Pasta',
+                'Tem certeza que deseja excluir esta pasta? Todos os briefings dentro dela serão perdidos.',
+                async () => {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/folders/${folderId}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            await loadFolders();
+                            showAlert('Pasta excluída com sucesso!', 'success');
+                        } else {
+                            showAlert('Erro ao excluir pasta', 'error');
+                        }
+                    } catch (error) {
+                        showAlert('Erro de conexão', 'error');
+                    }
+                    closeModal();
+                }
+            );
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Modal functions
+        function showModal(title, message, onConfirm) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modalConfirmBtn').onclick = onConfirm;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        // Switch tab
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('briefingForm').reset();
+            document.getElementById('outputContent').innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+                    <h3>Formulário limpo</h3>
+                    <p>Preencha os campos e clique em "Gerar Briefing"</p>
+                </div>
+            `;
+            document.getElementById('outputActions').style.display = 'none';
+            currentBriefing = null;
+        }
+    </script>
+</body>
+</html>

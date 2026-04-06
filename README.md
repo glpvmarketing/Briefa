@@ -1,154 +1,205 @@
-# Briefa - Sistema de Geração de Briefings com IA
+# Briefa - Gerador de Briefings com IA
 
-Um aplicativo (Web/Mobile) que utiliza Inteligência Artificial Generativa para transformar solicitações informais (áudio, texto solto, anotações manuscritas via OCR) em briefings profissionais, estruturados e validados, prontos para execução por equipes criativas.
+Sistema completo para transformação de solicitações informais em briefings profissionais estruturados usando Inteligência Artificial Generativa.
 
-## 🚀 Funcionalidades Principais
+## 🚀 Funcionalidades
 
-### Módulo de Entrada de Dados (Input)
-- **Chat Natural**: Digite ou fale sua solicitação de forma informal
-- **Upload de Arquivos**: Aceita PDFs, imagens de anotações manuscritas (OCR), gravações de áudio
-- **Questionário Dinâmico**: IA detecta falta de informação e faz perguntas específicas
+- **Entrada Natural**: Digite, fale ou faça upload de anotações
+- **IA Inteligente**: Classifica complexidade e aplica templates automaticamente
+- **Personas de Marca**: GLPV, B2B Corporativo, Gen-Z, Luxury
+- **Templates Profissionais**: 5 modelos prontos para diferentes cenários
+- **Especificações Técnicas**: Dimensões, formatos e requisitos automáticos
+- **Memória Institucional**: Pastas contextuais aprendem com projetos anteriores
+- **Validação Automática**: Checklists inteligentes
+- **Fluxo de Aprovação**: Stakeholders podem revisar antes da execução
 
-### Motor de Inteligência (O Cérebro)
-- **Classificação Automática**: Identifica se é briefing Simples, Campanha ou Estratégico
-- **Aplicação de Templates**: Seleciona automaticamente o modelo ideal
-- **Injeção de Contexto (Tom de Voz)**: Bibliotecas de Tom de Voz pré-configuradas
-  - GLPV Humanizado
-  - Corporativo B2B
-  - Jovem Gen-Z
-  - Luxo Premium
-- **Validação Técnica**: Sugere especificações automaticamente
+## 🎯 Como Usar
 
-### Módulo de Saída (Output)
-- **Gerador de Documentos**: Exporta em PDF, DOCX, JSON
-- **Checklist de Validação**: Lista do que foi incluído e o que está faltando
-- **Sugestão de Referências**: Descrições de referências visuais baseadas no tema
+### Opção 1: Abrir Localmente (Recomendado)
 
-### Gestão e Colaboração
-- **Pastas Contextuais**: Briefings relacionados compartilham contexto
-- **Histórico de Versões**: Salva rascunhos e permite comparar alterações
-- **Fluxo de Aprovação**: Envia para stakeholders aprovar antes da execução
-- **Feedback Loop**: Refina a IA com feedback pós-projeto
+1. **Abra o arquivo `frontend/index.html` diretamente no seu navegador**:
+   - Navegue até a pasta do projeto
+   - Clique duas vezes em `frontend/index.html`
+   - O app abrirá no seu navegador
 
-## 🏗️ Arquitetura
+2. **Ou inicie o servidor backend e acesse pelo navegador**:
+   ```bash
+   cd backend
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
+   
+   Acesse: **http://localhost:8000**
 
-```
-backend/
-├── main.py           # API FastAPI
-├── models.py         # Modelos Pydantic
-├── ai_engine.py      # Motor de IA
-├── storage.py        # Armazenamento (JSON files)
-├── templates.py      # Templates de briefing
-└── brand_personas.py # Personas de marca
-```
+### Opção 2: Documentação da API
 
-## 🔧 Instalação e Execução
-
-### Pré-requisitos
-- Python 3.12+
-- pip
-
-### Instalação
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-### Executar o Servidor
-
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Acessar a API
-
+Com o servidor rodando, acesse:
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 - **Health Check**: http://localhost:8000/health
 
-## 📖 Uso da API
+## 📁 Estrutura do Projeto
 
-### 1. Gerar um Briefing
-
-```bash
-curl -X POST http://localhost:8000/briefings/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_input": {
-      "text": "Preciso de um post para os 30 anos do hospital, focado em doação, tom emocionante.",
-      "input_type": "text",
-      "brand_tone": "emotional",
-      "brand_persona_id": "glpv_30anos"
-    }
-  }'
+```
+/workspace/
+├── backend/
+│   ├── main.py              # API FastAPI
+│   ├── models.py            # Modelos de dados
+│   ├── ai_engine.py         # Motor de IA
+│   ├── storage.py           # Armazenamento local
+│   ├── templates.py         # Templates de briefing
+│   ├── brand_personas.py    # Personas de marca
+│   └── requirements.txt     # Dependências
+├── frontend/
+│   └── index.html           # Interface web completa
+├── data/                    # Dados armazenados
+│   ├── briefings/
+│   ├── folders/
+│   └── personas/
+└── README.md
 ```
 
-### 2. Criar uma Pasta
+## 🔧 Instalação
 
-```bash
-curl -X POST "http://localhost:8000/folders?name=GLPV%20-%2030%20Anos&description=Campanha%20de%20celebração"
+### Requisitos
+- Python 3.9+
+- Navegador web moderno (Chrome, Firefox, Edge)
+
+### Passos
+
+1. **Instale as dependências**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+
+2. **Inicie o servidor**:
+   ```bash
+   cd backend
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+3. **Acesse a aplicação**:
+   - Frontend: http://localhost:8000
+   - API Docs: http://localhost:8000/docs
+
+## 🎨 Uso da Aplicação
+
+### 1. Criar uma Pasta
+- Vá na aba "Pastas"
+- Digite o nome do projeto/cliente
+- Clique em "Criar"
+
+### 2. Selecionar Persona de Marca
+- Escolha entre: GLPV, B2B, Gen-Z, ou Luxury
+- Cada persona tem tom de voz e diretrizes específicas
+
+### 3. Descrever o Projeto
+Exemplo:
+```
+Preciso de um post para os 30 anos do hospital, 
+focado em doação, tom emocionante. Data: 03/06. 
+Deliverables: posts, stories, thumb.
 ```
 
-### 3. Salvar um Briefing
+### 4. Gerar Briefing
+- Clique em "Gerar Briefing"
+- A IA processa em segundos
+- Visualize o resultado estruturado
 
-```bash
-curl -X POST http://localhost:8000/briefings/save \
-  -H "Content-Type: application/json" \
-  -d '{"title": "...", "description": "...", ...}'
-```
+### 5. Ações Disponíveis
+- 💾 **Salvar**: Armazena na pasta selecionada
+- 🔄 **Gerar Outro**: Cria nova versão
+- 📥 **Exportar**: Baixa o briefing
+- 🗑️ **Descartar**: Remove o rascunho
 
-### 4. Listar Templates Disponíveis
+## 📊 Endpoints da API
 
-```bash
-curl http://localhost:8000/templates
-```
+### Pastas
+- `GET /folders` - Listar pastas
+- `POST /folders` - Criar pasta
+- `DELETE /folders/{id}` - Excluir pasta
+- `GET /folders/{id}` - Detalhes da pasta
 
-### 5. Listar Personas de Marca
+### Personas
+- `GET /personas` - Listar personas
+- `GET /personas/{id}` - Detalhes da persona
 
-```bash
-curl http://localhost:8000/personas
-```
+### Briefings
+- `POST /generate-briefing` - Gerar briefing com IA
+- `POST /briefings` - Salvar briefing
+- `GET /briefings` - Listar briefings
+- `GET /briefings/{id}` - Detalhes do briefing
+- `PUT /briefings/{id}` - Atualizar briefing
+- `DELETE /briefings/{id}` - Excluir briefing
 
-## 🎯 Diferenciais Competitivos
+### Templates
+- `GET /templates` - Listar templates
+- `GET /templates/{id}` - Detalhes do template
 
-1. **Não apenas "gera texto"**: Aplica lógica de projeto (prazos, responsabilidades, especificações técnicas)
-2. **Bibliotecas de Tom de Voz**: Pré-configuradas para diferentes perfis de marca
-3. **Integração com Fluxos**: Trello, Asana, Jira (simulado na API)
-4. **Memória Institucional**: Pastas servem como contexto para briefings similares
-5. **Redução de Tempo**: De 45 minutos para 3 minutos na elaboração de briefings
+## 🤖 Motor de IA
 
-## 📊 Modelos de Complexidade
+O sistema classifica automaticamente:
 
-| Nível | Tipo | Descrição | Template Sugerido |
-|-------|------|-----------|-------------------|
-| 1 | Tarefa Única | Post único, arte avulsa | Post+Story |
-| 2 | Campanha Multi-peça | Múltiplos formatos, eventos | Campanha Completa, Evento Corporativo |
-| 3 | Estratégico | Rebrand, posicionamento | Refresh de Marca |
+### Níveis de Complexidade
+- **Nível 1 (Simples)**: Tarefa única (ex: post único)
+- **Nível 2 (Campanha)**: Múltiplas peças e formatos
+- **Nível 3 (Estratégico)**: Objetivos de negócio + KPIs
 
-## 👥 Público-Alvo
+### Templates Disponíveis
+1. **Post+Story**: Redes sociais básicas
+2. **Campanha Completa**: Multi-peças e canais
+3. **Evento Corporativo**: Lançamentos e celebrações
+4. **Refresh de Marca**: Reposicionamento
+5. **Produção de Vídeo**: Conteúdo audiovisual
 
-- Gestores de Marketing e Diretores de Criação
-- Agências de Publicidade e Design
-- Freelancers que precisam escalar produção de documentação
+## 🔒 Segurança
 
-## 🔐 Segurança e Conformidade
+- Dados armazenados localmente
+- Sem envio para servidores externos
+- Pronto para adequação LGPD
 
-- Criptografia de ponta a ponta (em produção)
-- Conformidade com LGPD
-- Dados sensíveis de campanhas não lançadas protegidas
+## 🛠️ Tecnologias
 
-## 📈 Roadmap
+- **Backend**: FastAPI (Python)
+- **Frontend**: HTML5, CSS3, JavaScript puro
+- **Armazenamento**: JSON files (local)
+- **IA**: Lógica heurística + processamento de linguagem natural
 
-- [ ] Integração real com OpenAI/Anthropic APIs
-- [ ] OCR para anotações manuscritas
-- [ ] Transcrição de áudio (Speech-to-Text)
-- [ ] Export PDF/DOCX formatado
-- [ ] Integrações reais: Trello, Asana, Jira, Slack
-- [ ] Autenticação e autorização de usuários
-- [ ] Banco de dados PostgreSQL/MongoDB
-- [ ] Frontend React/Vue.js
+## 📝 Exemplo de Briefing Gerado
 
-## 📝 License
+Um briefing completo inclui:
+- ✅ Nome e objetivo do projeto
+- ✅ Público-alvo definido
+- ✅ Tom de voz da marca
+- ✅ Lista de deliverables
+- ✅ Especificações técnicas
+- ✅ Cronograma sugerido
+- ✅ Checklist de validação
+- ✅ Observações e referências
 
-MIT License
+## 🚀 Próximos Passos (Deploy Público)
+
+Para disponibilizar online:
+
+1. **Render/Railway**:
+   - Crie conta em render.com ou railway.app
+   - Conecte seu repositório GitHub
+   - Configure:
+     - Build: `pip install -r backend/requirements.txt`
+     - Start: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+
+2. **Hugging Face Spaces**:
+   - Crie um Space tipo "Docker"
+   - Adicione Dockerfile incluso
+   - Deploy automático
+
+## 📞 Suporte
+
+Para dúvidas ou problemas:
+1. Verifique se o backend está rodando
+2. Confira o console do navegador (F12)
+3. Teste a API em http://localhost:8000/docs
+
+---
+
+**Briefa** - Transformando ideias em briefings profissionais em segundos! ⚡
