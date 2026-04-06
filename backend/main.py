@@ -4,7 +4,8 @@ API REST para criação, gestão e exportação de briefings profissionais
 """
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from typing import List, Optional, Dict, Any
 import uuid
 import os
@@ -34,16 +35,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve arquivos estáticos do frontend
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
 
 # === Health Check ===
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Endpoint de saúde da API"""
+    """Serve o frontend ou retorna saúde da API"""
+    # Tenta servir o index.html do frontend
+    index_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return f.read()
+    
+    # Fallback para JSON se frontend não existir
     return {
         "service": "Briefa API",
         "version": "1.0.0",
-        "status": "running"
+        "status": "running",
+        "docs": "/docs"
     }
 
 
